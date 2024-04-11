@@ -10,6 +10,7 @@ const flash = require("connect-flash");
 const bcrypt = require("bcrypt");
 
 dotenv.config();
+const stripe = require("stripe")(process.env.STRIPE_SECRET_KEY);
 
 const app = express();
 app.use(flash());
@@ -56,15 +57,11 @@ passport.use(
     const users = require("./data/users.json");
     const user = users.find((user) => user.email === username);
 
-    // console.log("Entered username:", username);
-    // console.log("Entered password:", password);
-    // console.log("User found in JSON file:", user);
     if (!user) {
       console.log("User not found.");
       return done(null, false, { message: "Invalid username or password" });
     }
 
-    // Compare password for user
     bcrypt.compare(password, user.password, (err, result) => {
       if (err || !result) {
         console.log("Incorrect password.");
@@ -96,7 +93,7 @@ passport.use(
   })
 );
 
-// Serialize and deserialize users for session management
+// Serialize and deserialize users for sessions
 passport.serializeUser((user, done) => {
   if (user.isAdmin) {
     done(null, user.username);
@@ -115,7 +112,6 @@ passport.deserializeUser((username, done) => {
   } else {
     const users = require("./data/users.json");
     const user = users.find((user) => user.email === username);
-    // console.log("Deserialized user:", user);
     done(null, user);
   }
 });
@@ -165,6 +161,28 @@ app.get("/admin/dashboard", isAdminAuthenticated, (req, res) => {
 
 app.get("/user/dashboard", isUserAuthenticated, (req, res) => {
   res.render("user/dashboard", { user: req.user });
+});
+
+app.get("/user/products", async (req, res) => {
+  try {
+    const products = await stripe.products.list();
+    const prices = await stripe.prices.list();
+
+    const productsWithPrices = products.data.map((product) => {
+      const price = prices.data.find((price) => price.product === product.id);
+      return {
+        id: product.id,
+        name: product.name,
+        description: product.description,
+        price: price ? price.unit_amount : 0,
+      };
+    });
+
+    res.render("user/products", { products: productsWithPrices });
+  } catch (error) {
+    console.error("Error fetching products:", error);
+    res.status(500).send("Internal Server Error");
+  }
 });
 
 app.get("/logout", (req, res) => {
