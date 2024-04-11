@@ -1,13 +1,13 @@
 <!DOCTYPE html>
 <html lang="en">
   <head>
-    <%- include('inc_head'); %>
-    <title>Start / StarShop</title>
+    <%- include('../inc_head'); %>
+    <title>Admin / StarShop</title>
   </head>
 
   <body>
     <!-- Navbar -->
-    <%- include('inc_navbarinside'); %>
+    <%- include('inc_navbaradmin'); %>
     <!-- Main content -->
     <main role="main" class="container pt-4">
       <div class="jumbotron bg-white">
@@ -19,8 +19,10 @@
     </main>
 
     <!-- Footer -->
-    <footer class="text-center bg-white"><%- include('inc_footer'); %></footer>
+    <footer class="text-center bg-white">
+      <%- include('../inc_footer'); %>
+    </footer>
 
-    <%- include('inc_jsbottom'); %>
+    <%- include('../inc_jsbottom'); %>
   </body>
 </html>

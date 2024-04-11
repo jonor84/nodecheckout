@@ -7,6 +7,7 @@ const bodyParser = require("body-parser");
 const passport = require("passport");
 const LocalStrategy = require("passport-local").Strategy;
 const flash = require("connect-flash");
+const bcrypt = require("bcrypt");
 
 dotenv.config();
 
@@ -28,44 +29,123 @@ app.use(
 );
 
 // Middlewares
+app.use(bodyParser.json());
+app.use(bodyParser.urlencoded({ extended: true }));
+
+function isAdminAuthenticated(req, res, next) {
+  if (req.isAuthenticated() && req.user && req.user.isAdmin) {
+    return next();
+  }
+  res.redirect("/alogin");
+}
+
+function isUserAuthenticated(req, res, next) {
+  if (req.isAuthenticated() && req.user && !req.user.isAdmin) {
+    return next();
+  }
+  res.redirect("/login");
+}
+
 app.use(passport.initialize());
 app.use(passport.session());
 
+// Passport for users
 passport.use(
+  "user",
   new LocalStrategy((username, password, done) => {
-    if (
-      username === process.env.ADMIN_USER &&
-      password === process.env.ADMIN_PASS
-    ) {
-      return done(null, { username: username });
-    } else {
+    const users = require("./data/users.json");
+    const user = users.find((user) => user.email === username);
+
+    // console.log("Entered username:", username);
+    // console.log("Entered password:", password);
+    // console.log("User found in JSON file:", user);
+    if (!user) {
+      console.log("User not found.");
       return done(null, false, { message: "Invalid username or password" });
+    }
+
+    // Compare password for user
+    bcrypt.compare(password, user.password, (err, result) => {
+      if (err || !result) {
+        console.log("Incorrect password.");
+        return done(null, false, { message: "Invalid username or password" });
+      }
+      console.log("User authenticated successfully.");
+      return done(null, user);
+    });
+  })
+);
+
+// Passport for admins
+passport.use(
+  "admin",
+  new LocalStrategy((username, password, done) => {
+    const adminUsername = process.env.ADMIN_USER;
+    const adminPassword = process.env.ADMIN_PASS;
+
+    if (username === adminUsername && password === adminPassword) {
+      const adminUser = {
+        username: adminUsername,
+        isAdmin: true,
+      };
+      console.log("Admin authenticated successfully.");
+      return done(null, adminUser);
+    } else {
+      return done(null, false, { message: "Invalid admin credentials" });
     }
   })
 );
 
+// Serialize and deserialize users for session management
 passport.serializeUser((user, done) => {
-  done(null, user.username);
-});
-
-passport.deserializeUser((id, done) => {
-  done(null, { username: id });
-});
-
-const isAuthenticated = (req, res, next) => {
-  if (req.isAuthenticated()) {
-    return next();
+  if (user.isAdmin) {
+    done(null, user.username);
+  } else {
+    done(null, user.email);
   }
-  res.redirect("/");
-};
+});
 
-app.use(bodyParser.json());
-app.use(bodyParser.urlencoded({ extended: true }));
+passport.deserializeUser((username, done) => {
+  if (username === process.env.ADMIN_USER) {
+    const adminUser = {
+      username: process.env.ADMIN_USER,
+      isAdmin: true,
+    };
+    return done(null, adminUser);
+  } else {
+    const users = require("./data/users.json");
+    const user = users.find((user) => user.email === username);
+    // console.log("Deserialized user:", user);
+    done(null, user);
+  }
+});
 
 // Routes
+app.post(
+  "/login",
+  passport.authenticate("user", {
+    successRedirect: "/user/dashboard",
+    failureRedirect: "/login",
+    failureFlash: true,
+  })
+);
+
+app.post(
+  "/alogin",
+  passport.authenticate("admin", {
+    successRedirect: "/admin/dashboard",
+    failureRedirect: "/alogin",
+    failureFlash: true,
+  })
+);
+
 app.get("/", (req, res) => {
   if (req.isAuthenticated()) {
-    res.redirect("/dashboard");
+    if (req.user.isAdmin) {
+      res.redirect("/admin/dashboard");
+    } else {
+      res.redirect("/user/dashboard");
+    }
   } else {
     res.render("home", { error: null });
   }
@@ -75,31 +155,46 @@ app.get("/login", (req, res) => {
   res.render("login", { error: req.flash("error") });
 });
 
-app.post(
-  "/login",
-  passport.authenticate("local", {
-    successRedirect: "/dashboard",
-    failureRedirect: "/login",
-    failureFlash: true,
-  })
-);
+app.get("/alogin", (req, res) => {
+  res.render("alogin", { error: req.flash("error") });
+});
 
-app.get("/dashboard", isAuthenticated, (req, res) => {
-  res.render("dashboard");
+app.get("/admin/dashboard", isAdminAuthenticated, (req, res) => {
+  res.render("admin/dashboard", { user: req.user });
+});
+
+app.get("/user/dashboard", isUserAuthenticated, (req, res) => {
+  res.render("user/dashboard", { user: req.user });
 });
 
 app.get("/logout", (req, res) => {
-  req.logout((err) => {
-    if (err) {
-      console.error("Error logging out:", err);
-    }
-    req.session.destroy((err) => {
+  if (req.isAuthenticated()) {
+    req.logout("user", (err) => {
       if (err) {
-        console.error("Error destroying session:", err);
+        console.error("Error logging out:", err);
       }
-      res.redirect("/");
+      req.session.destroy((err) => {
+        if (err) {
+          console.error("Error destroying session:", err);
+        }
+        res.redirect("/");
+      });
     });
-  });
+  } else if (req.isAuthenticated("admin")) {
+    req.logout("admin", (err) => {
+      if (err) {
+        console.error("Error logging out admin:", err);
+      }
+      req.session.destroy((err) => {
+        if (err) {
+          console.error("Error destroying session:", err);
+        }
+        res.redirect("/");
+      });
+    });
+  } else {
+    res.redirect("/");
+  }
 });
 
 // Wildcard route for everything else
@@ -109,7 +204,7 @@ app.get("*", (req, res) => {
 
   fs.access(pagePath, fs.constants.F_OK, (err) => {
     if (err) {
-      return res.status(404).render("404", { loggedIn: req.isAuthenticated() });
+      return res.status(404).render("404");
     }
     res.render(page);
   });
