@@ -9,14 +9,14 @@
     <!-- Navbar -->
     <%- include('inc_navbar'); %>
     <!-- Main content -->
-    <main role="main" class="container pt-4">
+    <main role="main" class="container pt-4 col-xl-3 text-center">
       <div class="jumbotron bg-white">
         <div id="page-content">
           <h1>Login</h1>
           <form action="/login" method="post">
             <div class="form-group">
-              <label for="username">Username:</label>
               <input
+                placeholder="Username"
                 type="text"
                 id="username"
                 name="username"
@@ -25,8 +25,8 @@
               />
             </div>
             <div class="form-group">
-              <label for="password">Password:</label>
               <input
+                placeholder="Password"
                 type="password"
                 id="password"
                 name="password"
@@ -34,7 +34,9 @@
                 required
               />
             </div>
-            <button type="submit" class="btn btn-primary">Login</button>
+            <button type="submit" class="btn btn-primary">
+              <i class="bi bi-box-arrow-in-right"></i> Login
+            </button>
           </form>
           <% if (error && error.length > 0) { %>
           <p class="text-danger mt-3"><%= error[0] %></p>
