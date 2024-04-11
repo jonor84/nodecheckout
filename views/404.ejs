@@ -2,7 +2,7 @@
 <html lang="en">
   <head>
     <%- include('inc_head'); %>
-    <title>Start / X</title>
+    <title>Start / StarShop</title>
   </head>
 
   <body>
@@ -12,20 +12,20 @@
     <main role="main" class="container pt-4">
       <div class="jumbotron bg-white">
         <div id="page-content">
-
-            <h1>404</h1>
-            <p>Page does not exist!</p>
-            <a class="btn btn-primary" href="/">Go to Home</a>
-
+          <h1>404</h1>
+          <p>Page does not exist!</p>
+          <% if (loggedIn) { %>
+          <a class="btn btn-primary" href="/dashboard">Go to Dashboard</a>
+          <% } else { %>
+          <a class="btn btn-primary" href="/">Go to Home</a>
+          <% } %>
         </div>
       </div>
     </main>
 
     <!-- Footer -->
-    <footer class="text-center bg-white">
-      <%- include('inc_footer'); %>
-    </footer>
+    <footer class="text-center bg-white"><%- include('inc_footer'); %></footer>
 
-    <%- include('inc_jsbottom'); %>  
+    <%- include('inc_jsbottom'); %>
   </body>
 </html>

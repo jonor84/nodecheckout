@@ -1,82 +1,119 @@
-const fs = require('fs');
-var path = require('path');
-const express = require('express');
-const session = require('express-session');
-const dotenv = require('dotenv');
-const bodyParser = require('body-parser');
+const fs = require("fs");
+const path = require("path");
+const express = require("express");
+const session = require("express-session");
+const dotenv = require("dotenv");
+const bodyParser = require("body-parser");
+const passport = require("passport");
+const LocalStrategy = require("passport-local").Strategy;
+const flash = require("connect-flash");
 
 dotenv.config();
 
 const app = express();
+app.use(flash());
+
 const PORT = process.env.PORT || 3000;
 
 app.set("view engine", "ejs");
 app.set("views", path.join(__dirname, "views"));
 app.use(express.static(path.join(__dirname, "public")));
 
-// app.use(session({
-//   secret: process.env.SESSION_SECRET,
-//   resave: false,
-//   saveUninitialized: true
-// }));
+app.use(
+  session({
+    secret: process.env.SESSION_SECRET,
+    resave: false,
+    saveUninitialized: true,
+  })
+);
 
-// check if the user is authenticated
-// const isAuthenticated = (req, res, next) => {
-//   if (req.isAuthenticated()) {
-//       return next(); 
-//   }
-//   res.redirect('/'); // User is not authenticated, redirect to home
-// };
+// Middlewares
+app.use(passport.initialize());
+app.use(passport.session());
 
+passport.use(
+  new LocalStrategy((username, password, done) => {
+    if (
+      username === process.env.ADMIN_USER &&
+      password === process.env.ADMIN_PASS
+    ) {
+      return done(null, { username: username });
+    } else {
+      return done(null, false, { message: "Invalid username or password" });
+    }
+  })
+);
 
-app.get("/favicon.ico", (req, res) => {
-  res.sendFile(path.join(__dirname, "public", "favicon.ico"));
+passport.serializeUser((user, done) => {
+  done(null, user.username);
 });
 
-// Define routes
-// app.get('/', (req, res) => {
-//   // Check if user is authenticated
-//   if (req.isAuthenticated()) {
-//       res.redirect('/dashboard');
-//   } else {
-//       res.render('home');
-//   }
-// });
+passport.deserializeUser((id, done) => {
+  done(null, { username: id });
+});
 
-// Render home page with layout
+const isAuthenticated = (req, res, next) => {
+  if (req.isAuthenticated()) {
+    return next();
+  }
+  res.redirect("/");
+};
+
+app.use(bodyParser.json());
+app.use(bodyParser.urlencoded({ extended: true }));
+
+// Routes
 app.get("/", (req, res) => {
-  res.render('home');
+  if (req.isAuthenticated()) {
+    res.redirect("/dashboard");
+  } else {
+    res.render("home", { error: null });
+  }
 });
 
-// app.get('/dashboard', isAuthenticated, (req, res) => {
-//   const firstName = req.session.firstName || 'NONAME';
-//   res.render('dashboard', { firstName: firstName });
-// });
+app.get("/login", (req, res) => {
+  res.render("login", { error: req.flash("error") });
+});
 
-// app.get('/logout', (req, res) => {
-//   req.session.firstName = null;
-//   req.logout(() => {
-//       res.redirect('/');
-//   });
-// });
+app.post(
+  "/login",
+  passport.authenticate("local", {
+    successRedirect: "/dashboard",
+    failureRedirect: "/login",
+    failureFlash: true,
+  })
+);
+
+app.get("/dashboard", isAuthenticated, (req, res) => {
+  res.render("dashboard");
+});
+
+app.get("/logout", (req, res) => {
+  req.logout((err) => {
+    if (err) {
+      console.error("Error logging out:", err);
+    }
+    req.session.destroy((err) => {
+      if (err) {
+        console.error("Error destroying session:", err);
+      }
+      res.redirect("/");
+    });
+  });
+});
 
 // Wildcard route for everything else
 app.get("*", (req, res) => {
   const page = req.url.slice(1);
   const pagePath = path.join(__dirname, "views", `${page}.ejs`);
-  console.log("Page Path:", pagePath);
 
-  // Check if the requested page exists
   fs.access(pagePath, fs.constants.F_OK, (err) => {
-      if (err) {
-          // Page does not exist, render the 404.ejs page
-          return res.status(404).render("404");
-      }
-      // Page exists, render it
-      res.render(page);
+    if (err) {
+      return res.status(404).render("404", { loggedIn: req.isAuthenticated() });
+    }
+    res.render(page);
   });
 });
-
 
 // Start the server
 app.listen(PORT, () => {
