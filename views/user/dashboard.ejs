@@ -12,8 +12,35 @@
     <main role="main" class="container pt-4">
       <div class="jumbotron bg-white">
         <div id="page-content">
-          <h1>Test</h1>
-          <p>Test page info</p>
+          <h1 class="text-center">Welcome to Dashboard, <%= firstName %>!</h1>
+          <p class="text-center">What would you like to do today?</p>
+
+          <div class="row">
+            <div class="col-xl-6">
+              <div class="card p-2 growsm">
+                <div class="card-body">
+                  <h3>
+                    <i class="bi bi-bookmark-star-fill text-danger"></i> Browse
+                  </h3>
+                  <p>I want to browse the star catalouge!</p>
+                  <a href="/user/products" class="btn btn-primary grow"
+                    >Go to <i class="bi bi-arrow-right"></i
+                  ></a>
+                </div>
+              </div>
+            </div>
+            <div class="col-xl-6">
+              <div class="card p-2 growsm">
+                <div class="card-body">
+                  <h3><i class="bi bi-list-ul text-danger"></i> My orders</h3>
+                  <p>I want to look at my orders!</p>
+                  <a href="/user/orders" class="btn btn-primary grow"
+                    >Go to <i class="bi bi-arrow-right"></i
+                  ></a>
+                </div>
+              </div>
+            </div>
+          </div>
         </div>
       </div>
     </main>

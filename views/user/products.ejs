@@ -2,7 +2,7 @@
 <html lang="en">
   <head>
     <%- include('../inc_head'); %>
-    <title>Produkter / StarShop</title>
+    <title>Products / StarShop</title>
   </head>
 
   <body>
@@ -12,7 +12,7 @@
     <main role="main" class="container pt-4">
       <div class="jumbotron bg-white">
         <div id="page-content">
-          <h1>Produkter</h1>
+          <h1>Products</h1>
           <div class="product-list mt-0">
             <% if (products.length === 0) { %>
             <p>No products available.</p>
@@ -23,14 +23,14 @@
                 <div class="card p-0 m-0 growsm h-100" style="width: 100%">
                   <i
                     class="bi bi-star text-center text-warning"
-                    style="font-size: 75px"
+                    style="font-size: 100px"
                   ></i>
                   <div class="card-body">
                     <div class="product">
                       <h2><%= product.name %></h2>
                       <p><%= product.description %></p>
                       <p class="text-success" style="font-weight: bold">
-                        Price: <%= product.price %>
+                        Price: <%= product.price %> SEK
                       </p>
                       <a class="btn btn-primary" href="/addtocart"
                         ><i class="bi bi-bag"></i> BUY STAR</a

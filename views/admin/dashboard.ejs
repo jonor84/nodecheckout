@@ -2,7 +2,7 @@
 <html lang="en">
   <head>
     <%- include('../inc_head'); %>
-    <title>Admin / StarShop</title>
+    <title>Admin - Dashboard / StarShop</title>
   </head>
 
   <body>
@@ -12,8 +12,36 @@
     <main role="main" class="container pt-4">
       <div class="jumbotron bg-white">
         <div id="page-content">
-          <h1>Test</h1>
-          <p>Test page info</p>
+          <h1 class="text-center">Welcome to Dashboard, Admin!</h1>
+          <p class="text-center">What would you like to do today?</p>
+
+          <div class="row">
+            <div class="col-xl-6">
+              <div class="card p-2 growsm">
+                <div class="card-body">
+                  <h3>
+                    <i class="bi bi-people-fill text-danger"></i>
+                    Customers
+                  </h3>
+                  <p>I want to look at the customer list!</p>
+                  <a href="/admin/customers" class="btn btn-primary grow"
+                    >Go to <i class="bi bi-arrow-right"></i
+                  ></a>
+                </div>
+              </div>
+            </div>
+            <div class="col-xl-6">
+              <div class="card p-2 growsm">
+                <div class="card-body">
+                  <h3><i class="bi bi-list-ul text-danger"></i> Orders</h3>
+                  <p>I want to look at orders!</p>
+                  <a href="/admin/orders" class="btn btn-primary grow"
+                    >Go to <i class="bi bi-arrow-right"></i
+                  ></a>
+                </div>
+              </div>
+            </div>
+          </div>
         </div>
       </div>
     </main>

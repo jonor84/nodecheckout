@@ -159,11 +159,28 @@ app.get("/admin/dashboard", isAdminAuthenticated, (req, res) => {
   res.render("admin/dashboard", { user: req.user });
 });
 
-app.get("/user/dashboard", isUserAuthenticated, (req, res) => {
-  res.render("user/dashboard", { user: req.user });
+app.get("/admin/customers", isAdminAuthenticated, (req, res) => {
+  res.render("admin/customers", { user: req.user });
 });
 
-app.get("/user/products", async (req, res) => {
+app.get("/admin/orders", isAdminAuthenticated, (req, res) => {
+  res.render("admin/orders", { user: req.user });
+});
+
+app.get("/user/dashboard", isUserAuthenticated, (req, res) => {
+  const firstName = req.user.firstName;
+  res.render("user/dashboard", { firstName: firstName });
+});
+
+app.get("/users/orders", isUserAuthenticated, (req, res) => {
+  res.render("users/orders", { user: req.user });
+});
+
+app.get("/users/cart", isUserAuthenticated, (req, res) => {
+  res.render("users/cart", { user: req.user });
+});
+
+app.get("/user/products", isUserAuthenticated, async (req, res) => {
   try {
     const products = await stripe.products.list();
     const prices = await stripe.prices.list();
@@ -174,7 +191,7 @@ app.get("/user/products", async (req, res) => {
         id: product.id,
         name: product.name,
         description: product.description,
-        price: price ? price.unit_amount : 0,
+        price: price ? price.unit_amount / 100 : 0, // Convert to kr without decimals
       };
     });
 
