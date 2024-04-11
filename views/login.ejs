@@ -13,6 +13,11 @@
       <div class="jumbotron bg-white">
         <div id="page-content">
           <h1>Login</h1>
+          <% if (error && error.length > 0) { %>
+          <div class="alert alert-danger text-dark mt-2 p-2">
+            <i class="bi bi-x-circle-fill"></i> <%= error[0] %>
+          </div>
+          <% } %>
           <form action="/login" method="post">
             <div class="form-group">
               <input
@@ -34,13 +39,10 @@
                 required
               />
             </div>
-            <button type="submit" class="btn btn-primary">
+            <button type="submit" class="btn btn-primary btn-lg">
               <i class="bi bi-box-arrow-in-right"></i> Login
             </button>
           </form>
-          <% if (error && error.length > 0) { %>
-          <p class="text-danger mt-3"><%= error[0] %></p>
-          <% } %>
         </div>
       </div>
     </main>
