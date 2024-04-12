@@ -3,17 +3,79 @@
   <head>
     <%- include('../inc_head'); %>
     <title>My Cart / StarShop</title>
-  </head>
+    <script>
+      function calculateTax(cartItems) {
+        const taxRate = 0.25;
+        const subtotal = cartItems.reduce(
+          (total, item) => total + item.price,
+          0
+        );
+        const taxAmount = subtotal * taxRate;
+        return taxAmount;
+      }
 
+      function calculateTotal(cartItems) {
+        const subtotal = cartItems.reduce(
+          (total, item) => total + item.price,
+          0
+        );
+        const taxAmount = calculateTax(cartItems);
+        const totalAmount = subtotal + taxAmount;
+        return totalAmount;
+      }
+    </script>
+  </head>
   <body>
     <!-- Navbar -->
     <%- include('inc_navbaruser'); %>
     <!-- Main content -->
+    <div id="encodedData" style="display: none">
+      <%= JSON.stringify(cartItems) %>
+    </div>
+
     <main role="main" class="container pt-4">
       <div class="jumbotron bg-white">
         <div id="page-content">
-          <h1>My cart</h1>
-          [ CART ITEMS LISTED HERE ]
+          <h1>My Cart</h1>
+          <% if (cartItems.length === 0) { %>
+          <p>Your cart is empty.</p>
+          <% } else { %>
+          <table class="table">
+            <thead>
+              <tr>
+                <th>Name</th>
+                <th>Quantity</th>
+                <th>Per Each</th>
+                <th>Row Total</th>
+              </tr>
+            </thead>
+            <tbody>
+              <% cartItems.forEach(item => { %>
+              <tr>
+                <td><%= item.name %></td>
+                <td>1</td>
+                <td><%= item.price %> Kr</td>
+                <td><%= item.price %> Kr</td>
+              </tr>
+              <% }); %>
+              <tr>
+                <td colspan="3" class="text-right">Sum without tax</td>
+                <td>
+                  <%= cartItems.reduce((total, item) => total + item.price, 0)
+                  %> Kr
+                </td>
+              </tr>
+              <tr>
+                <td colspan="3" class="text-right">Tax (25%)</td>
+                <td><span id="taxAmount"></span> Kr</td>
+              </tr>
+              <tr>
+                <td colspan="3" class="text-right">Total</td>
+                <td><span id="totalAmount"></span> Kr</td>
+              </tr>
+            </tbody>
+          </table>
+          <% } %>
         </div>
       </div>
     </main>
@@ -24,5 +86,33 @@
     </footer>
 
     <%- include('../inc_jsbottom'); %>
+    <script>
+      // Update cart items count on page load
+      document.addEventListener("DOMContentLoaded", function () {
+        const cartItemsCount = "<%= cartItemsCount %>";
+        const cartItemsCountElement = document.getElementById("cartItemsCount");
+        cartItemsCountElement.textContent = cartItemsCount;
+      });
+    </script>
+    <script>
+      // Decode HTML entities and parse JSON data
+      document.addEventListener("DOMContentLoaded", function () {
+        const encodedJsonString =
+          document.getElementById("encodedData").textContent;
+        const decodedJsonString = decodeURIComponent(encodedJsonString);
+        const cartItems = JSON.parse(decodedJsonString);
+
+        const taxRate = 0.25;
+        const subtotal = cartItems.reduce(
+          (total, item) => total + item.price,
+          0
+        );
+        const taxAmount = subtotal * taxRate;
+        const totalAmount = parseFloat(subtotal) + parseFloat(taxAmount);
+
+        document.getElementById("taxAmount").textContent = taxAmount;
+        document.getElementById("totalAmount").textContent = totalAmount;
+      });
+    </script>
   </body>
 </html>

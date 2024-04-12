@@ -33,6 +33,12 @@ app.use(
 app.use(bodyParser.json());
 app.use(bodyParser.urlencoded({ extended: true }));
 
+app.use((req, res, next) => {
+  const cartItems = req.session.cart || [];
+  req.session.cartItemsCount = cartItems.length;
+  next();
+});
+
 function isAdminAuthenticated(req, res, next) {
   if (req.isAuthenticated() && req.user && req.user.isAdmin) {
     return next();
@@ -169,23 +175,50 @@ app.get("/admin/orders", isAdminAuthenticated, (req, res) => {
 
 app.get("/user/dashboard", isUserAuthenticated, (req, res) => {
   const firstName = req.user.firstName;
-  res.render("user/dashboard", { firstName: firstName });
+  const cartItemsCount = req.session.cartItemsCount;
+  console.log(cartItemsCount);
+  res.render("user/dashboard", {
+    firstName: firstName,
+    cartItemsCount: cartItemsCount,
+  });
 });
 
-app.get("/users/orders", isUserAuthenticated, (req, res) => {
-  res.render("users/orders", { user: req.user });
+app.get("/user/orders", isUserAuthenticated, (req, res) => {
+  const firstName = req.user.firstName;
+  const cartItemsCount = req.session.cartItemsCount;
+  res.render("user/orders", {
+    user: req.user,
+    cartItemsCount: cartItemsCount,
+  });
 });
 
-app.get("/users/cart", isUserAuthenticated, (req, res) => {
-  res.render("users/cart", { user: req.user });
+app.get("/addtocart/:productId", isUserAuthenticated, (req, res) => {
+  const productId = req.params.productId;
+  console.log("Product ID:", productId);
+
+  if (!req.session.cart) {
+    req.session.cart = [];
+  }
+
+  req.session.cart.push(productId);
+
+  req.session.cartItemsCount = req.session.cart.length;
+  console.log("Cart items count:", req.session.cartItemsCount);
+
+  req.flash("success", "Item added to cart!");
+  console.log("Session:", req.session);
+
+  res.json({ success: true, cartItemsCount: req.session.cartItemsCount });
 });
+
+// Define productsWithPrices for products, cart etc
+let productsWithPrices;
 
 app.get("/user/products", isUserAuthenticated, async (req, res) => {
   try {
     const products = await stripe.products.list();
     const prices = await stripe.prices.list();
-
-    const productsWithPrices = products.data.map((product) => {
+    productsWithPrices = products.data.map((product) => {
       const price = prices.data.find((price) => price.product === product.id);
       return {
         id: product.id,
@@ -194,10 +227,43 @@ app.get("/user/products", isUserAuthenticated, async (req, res) => {
         price: price ? price.unit_amount / 100 : 0, // Convert to kr without decimals
       };
     });
+    const cartItemsCount = req.session.cartItemsCount;
+    const successMessages = req.flash("success");
+    console.log("Success Messages:", successMessages);
 
-    res.render("user/products", { products: productsWithPrices });
+    res.render("user/products", {
+      products: productsWithPrices,
+      cartItemsCount: cartItemsCount,
+      successMessages: successMessages,
+    });
   } catch (error) {
     console.error("Error fetching products:", error);
+    res.status(500).send("Internal Server Error");
+  }
+});
+
+app.get("/user/cart", isUserAuthenticated, async (req, res) => {
+  const cartItemsCount = req.session.cartItemsCount;
+  const cartItemIds = req.session.cart || [];
+
+  try {
+    // Fetch product details for each product ID in the cart
+    const cartItems = await Promise.all(
+      cartItemIds.map(async (productId) => {
+        const product = productsWithPrices.find(
+          (product) => product.id === productId
+        );
+        return product;
+      })
+    );
+
+    res.render("user/cart", {
+      user: req.user,
+      cartItemsCount: cartItemsCount,
+      cartItems: cartItems,
+    });
+  } catch (error) {
+    console.error("Error fetching product details:", error);
     res.status(500).send("Internal Server Error");
   }
 });
