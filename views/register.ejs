@@ -1,0 +1,223 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <%- include('inc_head'); %>
+    <title>Register / StarShop</title>
+  </head>
+
+  <body>
+    <!-- Navbar -->
+    <%- include('inc_navbar'); %>
+    <!-- Main content -->
+    <main role="main" class="container pt-4 col-xl-3 text-center">
+      <div class="jumbotron bg-white">
+        <div id="page-content">
+          <h1>Register</h1>
+          <% if (error && error.length > 0) { %>
+          <div class="alert alert-danger text-dark mt-2 p-2">
+            <i class="bi bi-x-circle-fill"></i> <%= error[0] %>
+          </div>
+          <% } %>
+          <form action="/register" method="post">
+            <div class="form-group">
+              <input
+                placeholder="Email"
+                type="email"
+                class="form-control"
+                id="email"
+                name="email"
+                autocomplete="off"
+                required
+              />
+            </div>
+            <div class="input-group mb-3">
+              <input
+                placeholder="Password"
+                type="password"
+                class="form-control"
+                id="password"
+                name="password"
+                autocomplete="new-password"
+                required
+              />
+              <span class="input-group-text" id="password-toggle"
+                ><i class="bi-eye-slash"></i
+              ></span>
+            </div>
+            <div
+              class="alert alert-warning"
+              id="password-empty"
+              style="display: none"
+            >
+              <i class="bi bi-exclamation-circle-fill"></i> Password field
+              cannot be empty.
+            </div>
+            <div
+              class="alert alert-success"
+              id="password-success"
+              style="display: none"
+            >
+              <i class="bi bi-check-circle-fill"></i> Password matches the
+              criteria.
+            </div>
+            <div
+              class="alert alert-danger"
+              id="password-error"
+              style="display: none"
+            >
+              <i class="bi bi-x-circle-fill"></i> Password does not match the
+              criteria.
+            </div>
+            <div class="alert alert-info">
+              <i class="bi bi-info-circle-fill"></i> Password must be at least 8
+              characters including one small letter, one capital letter and one
+              number.
+            </div>
+
+            <div class="form-group">
+              <input
+                placeholder="First Name"
+                type="text"
+                class="form-control"
+                id="firstName"
+                name="firstName"
+                required
+              />
+            </div>
+            <div class="form-group">
+              <input
+                placeholder="Last Name"
+                type="text"
+                class="form-control"
+                id="lastName"
+                name="lastName"
+                required
+              />
+            </div>
+            <div class="form-group">
+              <input
+                placeholder="Address"
+                type="text"
+                class="form-control"
+                id="address"
+                name="address"
+                required
+              />
+            </div>
+            <div class="form-group">
+              <input
+                placeholder="ZIP Code"
+                type="text"
+                class="form-control"
+                id="zip"
+                name="zip"
+                required
+              />
+            </div>
+            <div class="form-group">
+              <input
+                placeholder="TOWN"
+                type="text"
+                class="form-control"
+                id="town"
+                name="town"
+                required
+              />
+            </div>
+            <input type="hidden" id="country" name="country" value="Sweden" />
+            <div class="alert alert-info">
+              <i class="bi bi-info-circle-fill"></i> The Register button will be
+              enabled when all fields are entered right.
+            </div>
+            <button
+              type="submit"
+              class="btn btn-primary btn-lg"
+              id="register-btn"
+              disabled
+            >
+              <i class="bi bi-box-arrow-in-right"></i> Register
+            </button>
+          </form>
+        </div>
+      </div>
+    </main>
+
+    <!-- Footer -->
+    <footer class="text-center bg-white"><%- include('inc_footer'); %></footer>
+
+    <%- include('inc_jsbottom'); %>
+    <script>
+      document.addEventListener("DOMContentLoaded", function () {
+        // Toggle show password
+        const passwordInput = document.getElementById("password");
+        const passwordToggle = document.getElementById("password-toggle");
+        const registerButton = document.getElementById("register-btn");
+
+        passwordToggle.addEventListener("click", function () {
+          const type =
+            passwordInput.getAttribute("type") === "password"
+              ? "text"
+              : "password";
+          passwordInput.setAttribute("type", type);
+          passwordToggle.querySelector("i").classList.toggle("bi-eye-slash");
+          passwordToggle.querySelector("i").classList.toggle("bi-eye");
+        });
+
+        // Password criteria message
+        const passwordEmptyMessage = document.getElementById("password-empty");
+        const passwordSuccessMessage =
+          document.getElementById("password-success");
+        const passwordErrorMessage = document.getElementById("password-error");
+
+        function checkPassword() {
+          const password = passwordInput.value;
+          const passwordRegex = /^(?=.*\d)(?=.*[a-z])(?=.*[A-Z]).{8,}$/;
+
+          if (password.trim() === "") {
+            passwordEmptyMessage.style.display = "block";
+            passwordSuccessMessage.style.display = "none";
+            passwordErrorMessage.style.display = "none";
+          } else if (passwordRegex.test(password)) {
+            passwordEmptyMessage.style.display = "none";
+            passwordSuccessMessage.style.display = "block";
+            passwordErrorMessage.style.display = "none";
+          } else {
+            passwordEmptyMessage.style.display = "none";
+            passwordSuccessMessage.style.display = "none";
+            passwordErrorMessage.style.display = "block";
+          }
+
+          // Check if all fields are filled and password is OK to enable register button
+          const allInputs = document.querySelectorAll("input");
+          const isAllFilled = Array.from(allInputs).every(
+            (input) => input.value.trim() !== ""
+          );
+          if (isAllFilled && passwordRegex.test(password)) {
+            registerButton.disabled = false;
+          } else {
+            registerButton.disabled = true;
+          }
+        }
+
+        checkPassword();
+        passwordInput.addEventListener("input", checkPassword);
+
+        // Zip only 5 digits
+        const zipInput = document.getElementById("zip");
+        zipInput.addEventListener("input", function (event) {
+          let zipValue = event.target.value.replace(/\D/g, "");
+          zipValue = zipValue.slice(0, 5);
+          event.target.value = zipValue;
+        });
+
+        // Town only uppercase letters and single space between
+        const townInput = document.getElementById("town");
+        townInput.addEventListener("input", function (event) {
+          let townValue = event.target.value.replace(/[^A-ÖA-Z\s]/g, "");
+          townValue = townValue.replace(/\s{2,}/g, " ");
+          event.target.value = townValue.toUpperCase();
+        });
+      });
+    </script>
+  </body>
+</html>

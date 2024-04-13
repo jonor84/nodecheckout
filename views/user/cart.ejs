@@ -102,6 +102,21 @@
               </tr>
             </tbody>
           </table>
+          <form action="/checkout" method="post">
+            <% cartItems.forEach(item => { %>
+            <input type="hidden" name="productId[]" value="<%= item.id %>" />
+            <input
+              type="hidden"
+              name="productPrice[]"
+              value="<%= item.price %>"
+            />
+            <% }); %>
+            <div class="d-flex justify-content-end">
+              <button type="submit" class="btn btn-primary btn-lg">
+                <i class="bi bi-cart-check-fill"></i> Proceed to Checkout
+              </button>
+            </div>
+          </form>
           <% } %>
         </div>
       </div>

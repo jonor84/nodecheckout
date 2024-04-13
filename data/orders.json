@@ -1,0 +1,33 @@
+[
+  {
+    "email": "user1@example.com",
+    "firstName": "Kalle",
+    "lastName": "Anka",
+    "address": "Paradisäppelvägen 1",
+    "zip": "11111",
+    "town": "ANKEBORG",
+    "country": "Sweden",
+    "totalPrice": 1300,
+    "cartItems": [
+      {
+        "id": "prod_PuGfwPH3gkp4UD",
+        "name": "Adhil",
+        "quantity": 1,
+        "price": 500
+      },
+      {
+        "id": "prod_PuGYmrIf6pGcBD",
+        "name": "Acrux",
+        "quantity": 1,
+        "price": 400
+      },
+      {
+        "id": "prod_PuGZiHDW4snZw6",
+        "name": "Adhafera",
+        "quantity": 1,
+        "price": 400
+      }
+    ],
+    "timestamp": "2024-04-13T17:34:20.081Z"
+  }
+]

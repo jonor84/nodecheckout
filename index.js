@@ -122,6 +122,26 @@ passport.deserializeUser((username, done) => {
   }
 });
 
+// Add new order to orders.json
+const saveOrderData = (orderData) => {
+  let ordersData = [];
+  try {
+    ordersData = JSON.parse(fs.readFileSync("data/orders.json", "utf8"));
+  } catch (error) {
+    console.error("Error reading orders data:", error);
+  }
+
+  orderData.timestamp = new Date().toISOString();
+  ordersData.push(orderData);
+
+  try {
+    fs.writeFileSync("data/orders.json", JSON.stringify(ordersData, null, 2));
+    console.log("Order data saved successfully");
+  } catch (error) {
+    console.error("Error saving order data:", error);
+  }
+};
+
 // Routes
 app.post(
   "/login",
@@ -153,8 +173,136 @@ app.get("/", (req, res) => {
   }
 });
 
+app.get("/register", (req, res) => {
+  res.render("register", { error: null });
+});
+
+app.post("/register", async (req, res) => {
+  const { email, password, firstName, lastName, address, zip, town, country } =
+    req.body;
+
+  // Check if user/email exist
+  const users = require("./data/users.json");
+  const existingUser = users.find((user) => user.email === email);
+  if (existingUser) {
+    req.flash("error", "Email is already registered. Please log in.");
+    return res.redirect("/login");
+  }
+
+  bcrypt.hash(password, 10, async (err, hashedPassword) => {
+    if (err) {
+      console.error("Error hashing password:", err);
+      req.flash("error", "An error occurred. Please try again later.");
+      return res.redirect("/register");
+    }
+
+    try {
+      // Create a new customer in Stripe
+      const customer = await stripe.customers.create({
+        email,
+        name: `${firstName} ${lastName}`,
+        address: {
+          line1: address,
+          postal_code: zip,
+          city: town,
+          country,
+        },
+      });
+      console.log("User added to Stripe.");
+
+      // Save the user to the users.json file
+      const newUser = {
+        email,
+        password: hashedPassword,
+        firstName,
+        lastName,
+        address,
+        zip,
+        town,
+        country,
+        stripeCustomerId: customer.id,
+      };
+
+      users.push(newUser);
+      fs.writeFile(
+        "./data/users.json",
+        JSON.stringify(users, null, 2),
+        (err) => {
+          if (err) {
+            console.error("Error saving user to database:", err);
+            req.flash("error", "An error occurred. Please try again later.");
+            return res.redirect("/register");
+          }
+
+          console.log("User added to json.");
+          req.flash("success", "Registration complete. You can now login.");
+          res.redirect("/login");
+        }
+      );
+    } catch (error) {
+      console.error("Error creating customer in Stripe:", error);
+      req.flash("error", "An error occurred. Please try again later.");
+      res.redirect("/register");
+    }
+  });
+});
+
+app.post("/checkout", isUserAuthenticated, async (req, res) => {
+  const cartItemIds = req.session.cart || [];
+
+  try {
+    if (cartItemIds.length === 0) {
+      throw new Error("No items in the cart");
+    }
+    // Fetch product details for each product ID in the cart
+    const cartItems = await Promise.all(
+      cartItemIds.map(async (productId) => {
+        const product = await stripe.products.retrieve(productId);
+        const price = await stripe.prices.list({
+          product: productId,
+          limit: 1,
+        });
+        return {
+          id: productId,
+          name: product.name,
+          price: price.data[0].unit_amount / 100,
+        };
+      })
+    );
+
+    // Create the checkout session using the cart items
+    const session = await stripe.checkout.sessions.create({
+      payment_method_types: ["card"],
+      line_items: cartItems.map((item) => ({
+        price_data: {
+          currency: "sek",
+          product_data: {
+            name: item.name,
+          },
+          unit_amount: Math.round(item.price * 100),
+        },
+        quantity: 1,
+      })),
+      mode: "payment",
+      customer: req.user.stripeCustomerId,
+      success_url: `${req.protocol}://${req.get("host")}/user/confirmation`,
+      cancel_url: `${req.protocol}://${req.get("host")}/user/cart`,
+    });
+
+    // Redirect to Stripe checkout page
+    res.redirect(session.url);
+  } catch (error) {
+    console.error("Error creating checkout session:", error);
+    req.flash("error", `Something went wrong, error: ${error.message}`);
+    res.redirect("/user/cart");
+  }
+});
+
 app.get("/login", (req, res) => {
-  res.render("login", { error: req.flash("error") });
+  res.render("login", {
+    error: req.flash("error"),
+    success: req.flash("success"),
+  });
 });
 
 app.get("/alogin", (req, res) => {
@@ -184,7 +332,6 @@ app.get("/user/dashboard", isUserAuthenticated, (req, res) => {
 });
 
 app.get("/user/orders", isUserAuthenticated, (req, res) => {
-  const firstName = req.user.firstName;
   const cartItemsCount = req.session.cartItemsCount;
   res.render("user/orders", {
     user: req.user,
@@ -214,6 +361,51 @@ app.get("/addtocart/:productId", isUserAuthenticated, (req, res) => {
 // Define productsWithPrices for products, cart etc
 let productsWithPrices;
 
+app.get("/user/confirmation", isUserAuthenticated, async (req, res) => {
+  // Save order data to orders.json file
+  const cartItemIds = req.session.cart || [];
+  const cartItems = await Promise.all(
+    cartItemIds.map(async (productId) => {
+      const product = await stripe.products.retrieve(productId);
+      const price = await stripe.prices.list({
+        product: productId,
+        limit: 1,
+      });
+      return {
+        id: productId,
+        name: product.name,
+        price: price.data[0].unit_amount / 100,
+      };
+    })
+  );
+
+  const totalPrice = cartItems.reduce((total, item) => total + item.price, 0);
+
+  const orderData = {
+    email: req.user.email,
+    firstName: req.user.firstName,
+    lastName: req.user.lastName,
+    address: req.user.address,
+    zip: req.user.zip,
+    town: req.user.town,
+    country: req.user.country,
+    totalPrice: totalPrice,
+    cartItems: cartItems.map((item) => ({
+      id: item.id,
+      name: item.name,
+      quantity: 1,
+      price: item.price,
+    })),
+  };
+
+  saveOrderData(orderData);
+
+  req.session.cart = [];
+  req.session.save();
+
+  res.render("user/confirmation", { orderData });
+});
+
 app.get("/user/products", isUserAuthenticated, async (req, res) => {
   try {
     const products = await stripe.products.list();
@@ -224,7 +416,7 @@ app.get("/user/products", isUserAuthenticated, async (req, res) => {
         id: product.id,
         name: product.name,
         description: product.description,
-        price: price ? price.unit_amount / 100 : 0, // Convert to kr without decimals
+        price: price ? price.unit_amount / 100 : 0,
       };
     });
     const cartItemsCount = req.session.cartItemsCount;
