@@ -9,35 +9,35 @@ This project was developed as part of a student project at Medieinstitutet in 20
 To run this Node project, you first need to ensure that you have Node.js installed on your computer. Visit https://nodejs.org/ and follow the installation instructions if you don't already have Node.js installed.
 
 ### Step 1: Clone the project
-Clone this project to your local computer by running the following command in the terminal.
+Clone this project to your local computer.
 
 ### Step 2: Install dependencies
 Run: 
 
 npm i
 
-npm i express express session
+npm i bcrypt
 
-npm i ejs
+npm i body-parser
 
-npm i bootstrap
-
-npm i passport passport-auth0
+npm i connect-flash
 
 npm i dotenv
 
-npm i body parser
+npm i ejs ejs-layout ejs-mate
 
-npm i axios
+npm i express express-ejs-layouts express-session
 
-npm i joi
+npm i passport passport-local
+
+npm i stripe
 
 
 ### Step 3: The ENV file
 Put the .env content in a new .env file in your folder root (nodeimages) - the same folder as this readme file. 
 
 It should contain: 
-AUTH0_DOMAIN, AUTH0_CLIENT_ID, AUTH0_CLIENT_SECRET, AUTH0_CALLBACK_URL, SESSION_SECRET, GOOGLE_URL, GOOGLE_APIKEY and GOOGLE_CX
+ADMIN_USER,ADMIN_PASS,SESSION_SECRET and STRIPE_SECRET_KEY
 
 ### Step 4: Start
 Start the application by running node index.js
