@@ -131,8 +131,18 @@ const saveOrderData = (orderData) => {
     console.error("Error reading orders data:", error);
   }
 
-  orderData.timestamp = new Date().toISOString();
-  ordersData.push(orderData);
+  // Find the highest existing order ID
+  let maxOrderId = ordersData.reduce(
+    (maxId, order) => Math.max(maxId, order.orderid || 0),
+    10000 // Start with 10001 if no orders exist
+  );
+
+  const orderId = maxOrderId + 1;
+
+  // Add the order ID to the order data and move it to the top
+  orderData = { orderid: orderId, ...orderData };
+  // Push the order data to the beginning of the array
+  ordersData.unshift(orderData);
 
   try {
     fs.writeFileSync("data/orders.json", JSON.stringify(ordersData, null, 2));
