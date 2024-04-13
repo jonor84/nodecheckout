@@ -15,6 +15,15 @@
     </style>
     <title>My Cart / StarShop</title>
     <script>
+      // Format thousand with a space
+      function formatPrice(price) {
+        let priceString = price.toString();
+        let parts = priceString.split(".");
+        parts[0] = parts[0].replace(/\B(?=(\d{3})+(?!\d))/g, " ");
+        return parts.join(",");
+      }
+
+      // Calculate tax
       function calculateTax(cartItems) {
         const taxRate = 0.25;
         const subtotal = cartItems.reduce(
@@ -25,6 +34,7 @@
         return taxAmount;
       }
 
+      // Calculate total
       function calculateTotal(cartItems) {
         const subtotal = cartItems.reduce(
           (total, item) => total + item.price,
@@ -65,8 +75,12 @@
               <tr>
                 <td><%= item.name %></td>
                 <td style="text-align: end">1</td>
-                <td style="text-align: end"><%= item.price %> Kr</td>
-                <td style="text-align: end"><%= item.price %> Kr</td>
+                <td style="text-align: end">
+                  <%= formatPrice(item.price) %> Kr
+                </td>
+                <td style="text-align: end">
+                  <%= formatPrice(item.price) %> Kr
+                </td>
               </tr>
               <% }); %>
               <tr>
@@ -106,8 +120,7 @@
         const cartItemsCountElement = document.getElementById("cartItemsCount");
         cartItemsCountElement.textContent = cartItemsCount;
       });
-    </script>
-    <script>
+
       // Decode HTML entities and parse JSON data
       document.addEventListener("DOMContentLoaded", function () {
         const encodedJsonString =
@@ -123,8 +136,10 @@
         const taxAmount = subtotal * taxRate;
         const totalAmount = parseFloat(subtotal) + parseFloat(taxAmount);
 
-        document.getElementById("taxAmount").textContent = taxAmount;
-        document.getElementById("totalAmount").textContent = totalAmount;
+        document.getElementById("taxAmount").textContent =
+          formatPrice(taxAmount);
+        document.getElementById("totalAmount").textContent =
+          formatPrice(totalAmount);
       });
     </script>
   </body>

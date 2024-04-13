@@ -257,10 +257,19 @@ app.get("/user/cart", isUserAuthenticated, async (req, res) => {
       })
     );
 
+    // Format thousand with a space
+    function formatPrice(price) {
+      let priceString = price.toString();
+      let parts = priceString.split(".");
+      parts[0] = parts[0].replace(/\B(?=(\d{3})+(?!\d))/g, " ");
+      return parts.join(",");
+    }
+
     res.render("user/cart", {
       user: req.user,
       cartItemsCount: cartItemsCount,
       cartItems: cartItems,
+      formatPrice: formatPrice,
     });
   } catch (error) {
     console.error("Error fetching product details:", error);
