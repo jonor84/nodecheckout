@@ -34,7 +34,7 @@ npm i stripe
 
 
 ### Step 3: The ENV file
-Put the .env content in a new .env file in your folder root (nodeimages) - the same folder as this readme file. 
+Put the .env content in a new .env file in your folder root (nodecheckout) - the same folder as this readme file. 
 
 It should contain: 
 ADMIN_USER,ADMIN_PASS,SESSION_SECRET and STRIPE_SECRET_KEY
