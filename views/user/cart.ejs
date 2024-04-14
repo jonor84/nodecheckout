@@ -15,34 +15,20 @@
     </style>
     <title>My Cart / StarShop</title>
     <script>
-      // Format thousand with a space
+      // Format number with spaces for thousands
       function formatPrice(price) {
-        let priceString = price.toString();
-        let parts = priceString.split(".");
-        parts[0] = parts[0].replace(/\B(?=(\d{3})+(?!\d))/g, " ");
-        return parts.join(",");
+        return price.toString().replace(/\B(?=(\d{3})+(?!\d))/g, " ");
       }
 
-      // Calculate tax
+      // Calculate tax based on total price
       function calculateTax(cartItems) {
-        const taxRate = 0.25;
-        const subtotal = cartItems.reduce(
+        const taxRate = 0.25; // 25%
+        const totalPrice = cartItems.reduce(
           (total, item) => total + item.price,
           0
         );
-        const taxAmount = subtotal * taxRate;
+        const taxAmount = (totalPrice / (1 + taxRate)) * taxRate;
         return taxAmount;
-      }
-
-      // Calculate total
-      function calculateTotal(cartItems) {
-        const subtotal = cartItems.reduce(
-          (total, item) => total + item.price,
-          0
-        );
-        const taxAmount = calculateTax(cartItems);
-        const totalAmount = subtotal + taxAmount;
-        return totalAmount;
       }
     </script>
   </head>
@@ -83,21 +69,15 @@
                 </td>
               </tr>
               <% }); %>
-              <tr>
-                <td colspan="3" class="text-right">Sum without tax:</td>
-                <td style="text-align: end">
-                  <%= cartItems.reduce((total, item) => total + item.price, 0)
-                  %> Kr
-                </td>
-              </tr>
               <tr class="classtax">
                 <td colspan="3" class="text-right">Swedish Tax (25% Moms):</td>
                 <td style="text-align: end"><span id="taxAmount"></span> Kr</td>
               </tr>
               <tr class="classpay">
-                <td colspan="3" class="text-right">Total to pay:</td>
+                <td colspan="3" class="text-right">Total to pay (with tax):</td>
                 <td style="text-align: end">
-                  <span id="totalAmount"></span> Kr
+                  <%= formatPrice(cartItems.reduce((total, item) => total +
+                  item.price, 0)) %> Kr
                 </td>
               </tr>
             </tbody>
@@ -134,27 +114,17 @@
         const cartItemsCount = "<%= cartItemsCount %>";
         const cartItemsCountElement = document.getElementById("cartItemsCount");
         cartItemsCountElement.textContent = cartItemsCount;
-      });
 
-      // Decode HTML entities and parse JSON data
-      document.addEventListener("DOMContentLoaded", function () {
+        // Decode HTML entities and parse JSON data
         const encodedJsonString =
           document.getElementById("encodedData").textContent;
         const decodedJsonString = decodeURIComponent(encodedJsonString);
         const cartItems = JSON.parse(decodedJsonString);
 
-        const taxRate = 0.25;
-        const subtotal = cartItems.reduce(
-          (total, item) => total + item.price,
-          0
-        );
-        const taxAmount = subtotal * taxRate;
-        const totalAmount = parseFloat(subtotal) + parseFloat(taxAmount);
-
+        // Calculate and display tax amount
+        const taxAmount = calculateTax(cartItems);
         document.getElementById("taxAmount").textContent =
           formatPrice(taxAmount);
-        document.getElementById("totalAmount").textContent =
-          formatPrice(totalAmount);
       });
     </script>
   </body>

@@ -139,10 +139,18 @@ const saveOrderData = (orderData) => {
 
   const orderId = maxOrderId + 1;
 
-  // Add the order ID to the order data and move it to the top
-  orderData = { orderid: orderId, ...orderData };
-  // Push the order data to the beginning of the array
-  ordersData.unshift(orderData);
+  // Format the timestamp
+  const timestamp = new Date().toISOString();
+
+  // Create a new object with reordered properties
+  const newOrderData = {
+    orderid: orderId,
+    timestamp: timestamp,
+    ...orderData,
+  };
+
+  // Push the new order data to the beginning
+  ordersData.unshift(newOrderData);
 
   try {
     fs.writeFileSync("data/orders.json", JSON.stringify(ordersData, null, 2));
@@ -323,12 +331,26 @@ app.get("/admin/dashboard", isAdminAuthenticated, (req, res) => {
   res.render("admin/dashboard", { user: req.user });
 });
 
-app.get("/admin/customers", isAdminAuthenticated, (req, res) => {
-  res.render("admin/customers", { user: req.user });
+app.get("/admin/orders", isAdminAuthenticated, (req, res) => {
+  const allOrders = require("./data/orders.json");
+
+  function formatDate(timestamp) {
+    const date = new Date(timestamp);
+    return date.toLocaleDateString();
+  }
+
+  res.render("admin/orders", {
+    allOrders: allOrders,
+    formatDate: formatDate,
+  });
 });
 
-app.get("/admin/orders", isAdminAuthenticated, (req, res) => {
-  res.render("admin/orders", { user: req.user });
+app.get("/admin/customers", isAdminAuthenticated, (req, res) => {
+  const allUsers = require("./data/users.json");
+
+  res.render("admin/customers", {
+    allUsers: allUsers,
+  });
 });
 
 app.get("/user/dashboard", isUserAuthenticated, (req, res) => {
@@ -337,14 +359,6 @@ app.get("/user/dashboard", isUserAuthenticated, (req, res) => {
   console.log(cartItemsCount);
   res.render("user/dashboard", {
     firstName: firstName,
-    cartItemsCount: cartItemsCount,
-  });
-});
-
-app.get("/user/orders", isUserAuthenticated, (req, res) => {
-  const cartItemsCount = req.session.cartItemsCount;
-  res.render("user/orders", {
-    user: req.user,
     cartItemsCount: cartItemsCount,
   });
 });
@@ -371,8 +385,24 @@ app.get("/addtocart/:productId", isUserAuthenticated, (req, res) => {
 // Define productsWithPrices for products, cart etc
 let productsWithPrices;
 
+app.get("/user/orders", isUserAuthenticated, (req, res) => {
+  const userOrders = require("./data/orders.json").filter(
+    (order) => order.email === req.user.email
+  );
+  const cartItemsCount = req.session.cartItemsCount;
+  function formatDate(timestamp) {
+    const date = new Date(timestamp);
+    return date.toLocaleDateString();
+  }
+  res.render("user/orders", {
+    user: req.user,
+    cartItemsCount: cartItemsCount,
+    userOrders: userOrders,
+    formatDate: formatDate,
+  });
+});
+
 app.get("/user/confirmation", isUserAuthenticated, async (req, res) => {
-  // Save order data to orders.json file
   const cartItemIds = req.session.cart || [];
   const cartItems = await Promise.all(
     cartItemIds.map(async (productId) => {
@@ -467,11 +497,23 @@ app.get("/user/cart", isUserAuthenticated, async (req, res) => {
       return parts.join(",");
     }
 
+    // Calculate tax
+    function calculateTax(cartItems) {
+      const taxRate = 0.25; // 25%
+      const totalPrice = cartItems.reduce(
+        (total, item) => total + item.price,
+        0
+      );
+      const taxAmount = (totalPrice / (1 + taxRate)) * taxRate;
+      return taxAmount;
+    }
+
     res.render("user/cart", {
       user: req.user,
       cartItemsCount: cartItemsCount,
       cartItems: cartItems,
       formatPrice: formatPrice,
+      calculateTax: calculateTax,
     });
   } catch (error) {
     console.error("Error fetching product details:", error);

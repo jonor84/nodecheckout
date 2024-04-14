@@ -2,7 +2,7 @@
 <html lang="en">
   <head>
     <%- include('../inc_head'); %>
-    <title>Admin - Orders / StarShop</title>
+    <title>All orders / StarShop</title>
   </head>
 
   <body>
@@ -12,8 +12,42 @@
     <main role="main" class="container pt-4">
       <div class="jumbotron bg-white">
         <div id="page-content">
-          <h1>Orders</h1>
-          <p>[ HERE A LIST OF ORDERS SHOULD BE ]</p>
+          <h1>All orders</h1>
+          <table class="table">
+            <thead>
+              <tr>
+                <th>Order ID</th>
+                <th>Date</th>
+                <th>To / Address</th>
+                <th>Items</th>
+                <th>Total Price</th>
+              </tr>
+            </thead>
+            <tbody>
+              <% allOrders.forEach(order => { %>
+              <tr>
+                <td><%= order.orderid %></td>
+                <td><%= formatDate(order.timestamp) %></td>
+                <td>
+                  <%= order.email %> <br /><%= order.firstName %> <%=
+                  order.lastName %><br /><%= order.address %><br />
+                  <%= order.zip %> <%= order.town %>, <%= order.country %>
+                </td>
+                <td>
+                  <ul>
+                    <% order.cartItems.forEach(item => { %>
+                    <li><%= item.name %> - <%= item.price %> SEK</li>
+                    <% }) %>
+                  </ul>
+                </td>
+                <td><%= order.totalPrice %> SEK</td>
+              </tr>
+              <% }) %>
+            </tbody>
+          </table>
+          <% if (allOrders.length === 0) { %>
+          <p>No orders</p>
+          <% } %>
         </div>
       </div>
     </main>

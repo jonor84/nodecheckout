@@ -13,7 +13,32 @@
       <div class="jumbotron bg-white">
         <div id="page-content">
           <h1>Customers</h1>
-          <p>[ HERE A LIST OF CUSTOMERS SHOULD BE ]</p>
+          <table class="table">
+            <thead>
+              <tr>
+                <th>Email</th>
+                <th>Name</th>
+                <th>Address</th>
+                <th>stripeCustomerId</th>
+              </tr>
+            </thead>
+            <tbody>
+              <% allUsers.forEach(user => { %>
+              <tr>
+                <td><%= user.email %></td>
+                <td><%= user.firstName %> <%= user.lastName %></td>
+                <td>
+                  <%= user.address %>, <%= user.zip %>, <%= user.town %>, <%=
+                  user.country %>
+                </td>
+                <td><%= user.stripeCustomerId %></td>
+              </tr>
+              <% }) %>
+            </tbody>
+          </table>
+          <% if (allUsers.length === 0) { %>
+          <p>No customers</p>
+          <% } %>
         </div>
       </div>
     </main>

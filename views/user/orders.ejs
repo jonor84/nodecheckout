@@ -13,7 +13,41 @@
       <div class="jumbotron bg-white">
         <div id="page-content">
           <h1>My orders</h1>
-          <p>[ MY ORDERS IS LISTED HERE ]</p>
+          <table class="table">
+            <thead>
+              <tr>
+                <th>Order ID</th>
+                <th>Date</th>
+                <th>Address</th>
+                <th>Items</th>
+                <th>Total Price</th>
+              </tr>
+            </thead>
+            <tbody>
+              <% userOrders.forEach(order => { %>
+              <tr>
+                <td><%= order.orderid %></td>
+                <td><%= formatDate(order.timestamp) %></td>
+                <td>
+                  <%= order.firstName %> <%= order.lastName %>, <%=
+                  order.address %><br />
+                  <%= order.zip %> <%= order.town %>, <%= order.country %>
+                </td>
+                <td>
+                  <ul>
+                    <% order.cartItems.forEach(item => { %>
+                    <li><%= item.name %> - <%= item.price %> SEK</li>
+                    <% }) %>
+                  </ul>
+                </td>
+                <td><%= order.totalPrice %> SEK</td>
+              </tr>
+              <% }) %>
+            </tbody>
+          </table>
+          <% if (userOrders.length === 0) { %>
+          <p>No orders</p>
+          <% } %>
         </div>
       </div>
     </main>
