@@ -160,6 +160,28 @@ const saveOrderData = (orderData) => {
   }
 };
 
+let allOrders = [];
+
+function loadOrdersData() {
+  try {
+    allOrders = JSON.parse(fs.readFileSync("data/orders.json", "utf8"));
+  } catch (error) {
+    console.error("Error reading orders data:", error);
+    allOrders = [];
+  }
+}
+
+// Load initial orders data
+loadOrdersData();
+
+// Check for changes in the orders
+fs.watch("data/orders.json", (eventType, filename) => {
+  if (eventType === "change") {
+    console.log("Orders file changed. Reloading orders data...");
+    loadOrdersData();
+  }
+});
+
 // Routes
 app.post(
   "/login",
@@ -332,8 +354,6 @@ app.get("/admin/dashboard", isAdminAuthenticated, (req, res) => {
 });
 
 app.get("/admin/orders", isAdminAuthenticated, (req, res) => {
-  const allOrders = require("./data/orders.json");
-
   function formatDate(timestamp) {
     const date = new Date(timestamp);
     return date.toLocaleDateString();
@@ -386,7 +406,7 @@ app.get("/addtocart/:productId", isUserAuthenticated, (req, res) => {
 let productsWithPrices;
 
 app.get("/user/orders", isUserAuthenticated, (req, res) => {
-  const userOrders = require("./data/orders.json").filter(
+  const userOrders = allOrders.filter(
     (order) => order.email === req.user.email
   );
   const cartItemsCount = req.session.cartItemsCount;
